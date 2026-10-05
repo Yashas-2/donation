@@ -1,0 +1,189 @@
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { ZEFFY_DONATION_URL } from '../../utils/zeffyDonation';
+
+/* ── Srinivasam SVG Logo Mark ──────────────────────────────── */
+function SrinivasamLogoMark() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <rect width="32" height="32" rx="8" fill="#059669" />
+      <path
+        d="M16 6C10.477 6 6 10.477 6 16s4.477 10 10 10 10-4.477 10-10S21.523 6 16 6z"
+        fill="none"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeDasharray="3 2"
+        opacity="0.4"
+      />
+      {/* Heart */}
+      <path
+        d="M16 22s-7-4.5-7-9a4 4 0 0 1 7-2.65A4 4 0 0 1 23 13c0 4.5-7 9-7 9z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+function HamburgerIcon({ open }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      {open ? (
+        <>
+          <line x1="4" y1="4" x2="18" y2="18" />
+          <line x1="18" y1="4" x2="4" y2="18" />
+        </>
+      ) : (
+        <>
+          <line x1="3" y1="7" x2="19" y2="7" />
+          <line x1="3" y1="11" x2="19" y2="11" />
+          <line x1="3" y1="15" x2="19" y2="15" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+export function Navbar() {
+  const { user, profile, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const isActive = (path) => location.pathname === path;
+  const closeMenu = () => setMenuOpen(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
+  };
+
+  const displayInitial = (profile?.full_name || user?.email || 'D').charAt(0).toUpperCase();
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || '';
+
+  const PublicLinks = () => (
+    <>
+      <Link to="/causes" className={`nav-link${isActive('/causes') ? ' active' : ''}`} onClick={closeMenu}>Explore Causes</Link>
+      <Link to="/how-it-works" className={`nav-link${isActive('/how-it-works') ? ' active' : ''}`} onClick={closeMenu}>How It Works</Link>
+      <Link to="/volunteer" className={`nav-link${isActive('/volunteer') ? ' active' : ''}`} onClick={closeMenu}>Volunteer</Link>
+      <Link to="/orphanage/register" className={`nav-link${isActive('/orphanage/register') ? ' active' : ''}`} onClick={closeMenu}>Register an Orphanage</Link>
+    </>
+  );
+
+  const OrphanageLinks = () => (
+    <>
+      <Link to="/orphanage/dashboard" className={`nav-link${isActive('/orphanage/dashboard') ? ' active' : ''}`} onClick={closeMenu}>Orphanage Portal</Link>
+    </>
+  );
+
+  const DonorLinks = () => (
+    <>
+      <Link to="/dashboard" className={`nav-link${isActive('/dashboard') ? ' active' : ''}`} onClick={closeMenu}>Home</Link>
+      <Link to="/causes" className={`nav-link${isActive('/causes') ? ' active' : ''}`} onClick={closeMenu}>Explore</Link>
+      <Link to="/donations" className={`nav-link${isActive('/donations') ? ' active' : ''}`} onClick={closeMenu}>My Donations</Link>
+      <Link to="/occasions" className={`nav-link${isActive('/occasions') ? ' active' : ''}`} onClick={closeMenu}>My Occasions</Link>
+    </>
+  );
+
+  const VolunteerLinks = () => (
+    <>
+      <Link to="/volunteer/dashboard" className={`nav-link${isActive('/volunteer/dashboard') ? ' active' : ''}`} onClick={closeMenu}>Volunteer Dashboard</Link>
+      <Link to="/causes" className={`nav-link${isActive('/causes') ? ' active' : ''}`} onClick={closeMenu}>Explore Causes</Link>
+    </>
+  );
+
+  const AdminLinks = () => (
+    <>
+      <Link to="/admin/dashboard" className={`nav-link${isActive('/admin/dashboard') ? ' active' : ''}`} onClick={closeMenu}>Admin Dashboard</Link>
+    </>
+  );
+
+  const getHomePath = () => {
+    if (!user) return '/';
+    if (profile?.role === 'admin') return '/admin/dashboard';
+    if (profile?.role === 'orphanage') return '/orphanage/dashboard';
+    if (profile?.role === 'volunteer') return '/volunteer/dashboard';
+    return '/dashboard';
+  };
+
+  const getLinks = () => {
+    if (!user) return <PublicLinks />;
+    if (profile?.role === 'admin') return <AdminLinks />;
+    if (profile?.role === 'orphanage') return <OrphanageLinks />;
+    if (profile?.role === 'volunteer') return <VolunteerLinks />;
+    return <DonorLinks />;
+  };
+
+  return (
+    <nav className="navbar" role="navigation" aria-label="Main navigation">
+      <div className="navbar-inner">
+        {/* Brand */}
+        <Link to={getHomePath()} className="navbar-brand" aria-label="Srinivasam home">
+          <SrinivasamLogoMark />
+          <span className="navbar-brand-name">Srinivasam</span>
+        </Link>
+
+        {/* Desktop Links */}
+        <div className={`navbar-links${menuOpen ? ' open' : ''}`}>
+          {getLinks()}
+        </div>
+
+        {/* Right section */}
+        <div className="navbar-right">
+          {!(profile?.role === 'orphanage' || profile?.role === 'admin' || location.pathname.startsWith('/orphanage') || location.pathname.startsWith('/admin')) && (
+            <a
+              href={ZEFFY_DONATION_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-cta btn-sm"
+              style={{ display: menuOpen ? 'none' : 'inline-flex' }}
+            >
+              Donate Now
+            </a>
+          )}
+
+          {user ? (
+            <div className="navbar-user">
+              <Link to="/profile" className="navbar-avatar" aria-label="My profile" title={displayName}>
+                {displayInitial}
+              </Link>
+              <span className="navbar-name">{displayName}</span>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={handleSignOut}
+                aria-label="Sign out"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Link to="/login" className="btn btn-outline btn-sm">Log in</Link>
+              <Link
+                to="/signup"
+                className="btn btn-primary btn-sm"
+                style={{ display: menuOpen ? 'none' : 'inline-flex' }}
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile hamburger */}
+          <button
+            className="navbar-menu-toggle"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <HamburgerIcon open={menuOpen} />
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
