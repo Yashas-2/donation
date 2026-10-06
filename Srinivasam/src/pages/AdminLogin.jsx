@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 // Hardcoded admin credentials (frontend-gated; replace with backend auth for production)
 const ADMIN_EMAIL = 'admin@srinivasam.org';
@@ -10,6 +11,7 @@ export function AdminLogin() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleFillDemo = () => {
@@ -52,12 +54,18 @@ export function AdminLogin() {
             className="auth-brand-logo"
             style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)' }}
             aria-hidden="true"
-          >
-            ?
-          </div>
+          ><Shield size={32} color="white"/></div>
           <h1 className="auth-title">Admin Portal</h1>
           <p className="auth-subtitle">Secure Access — Srinivasam Operations Staff</p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.875rem', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+        >
+          ← Back to roles
+        </button>
 
         {/* Info badge with quick fill */}
         <div
@@ -111,16 +119,29 @@ export function AdminLogin() {
 
           <div className="form-group">
             <label htmlFor="admin-password" className="form-label">Password</label>
-            <input
-              id="admin-password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                className="form-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0, display: 'flex'
+                }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button
@@ -129,7 +150,7 @@ export function AdminLogin() {
             style={{ background: '#0f172a', borderColor: '#0f172a' }}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Verifying Credentials…' : '? Access Admin Dashboard'}
+            {isSubmitting ? 'Verifying Credentials…' : 'Access Admin Dashboard'}
           </button>
         </form>
 

@@ -1,8 +1,10 @@
 import { supabase } from '../lib/supabaseClient';
+import { normalizeRole } from '../lib/roles';
 
 /**
- * Ensure or upsert a user profile in the public.profiles table.
- * Defaults user role to 'donor' for safety.
+ * Ensure a profile row exists for the user.
+ * The role passed in wins; it is never silently downgraded by this function.
+ * Throws when the row cannot be written so callers can surface the failure.
  */
 export async function ensureUserProfile(user, fullNameInput = null, roleInput = null) {
   if (!user) return null;
@@ -12,38 +14,29 @@ export async function ensureUserProfile(user, fullNameInput = null, roleInput = 
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
     user.email?.split('@')[0] ||
-    'Donor';
+    'User';
 
-  let role = roleInput || user.user_metadata?.role || 'donor';
-  if (role === 'platform_admin') role = 'admin';
-  if (role === 'orphanage_admin') role = 'orphanage';
+  const role = normalizeRole(roleInput || user.user_metadata?.role) || 'donor';
 
   const profileData = {
     id: user.id,
     full_name: fullName,
     email: user.email,
-    role: role,
-    updated_at: new Date().toISOString()
+    role,
+    updated_at: new Date().toISOString(),
   };
 
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert(profileData, { onConflict: 'id' })
-      .select()
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(profileData, { onConflict: 'id' })
+    .select()
+    .maybeSingle();
 
-    if (error) {
-      console.warn('Note on profiles upsert:', error.message || error);
-      // Fallback object if table is missing or RLS restricts single return
-      return profileData;
-    }
-
-    return data || profileData;
-  } catch (err) {
-    console.warn('Error syncing profile:', err);
-    return profileData;
+  if (error) {
+    throw new Error(error.message || 'Could not save your profile.');
   }
+
+  return data || profileData;
 }
 
 /**

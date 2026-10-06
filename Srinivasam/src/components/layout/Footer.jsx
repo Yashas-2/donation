@@ -41,8 +41,7 @@ export function Footer() {
               <span style={{ marginLeft: '0.5rem' }}>Srinivasam</span>
             </div>
             <p className="footer-brand-desc">
-              Connecting donors with verified Indian orphanages and causes.
-              Transparent giving. Real impact. Human connection.
+              Connecting donors with verified Indian orphanages. Transparent giving, real impact.
             </p>
             {/* Social links — matching srinivasam.org */}
             <div className="footer-social">
@@ -72,8 +71,6 @@ export function Footer() {
             <h4>Give</h4>
             <ul className="footer-links">
               <li><Link to="/causes">Explore Causes</Link></li>
-              <li><Link to="/causes">Urgent Needs</Link></li>
-              <li><Link to="/causes">Campaigns</Link></li>
               <li><Link to="/occasions">Occasion Giving</Link></li>
             </ul>
           </div>
@@ -94,20 +91,8 @@ export function Footer() {
             <ul className="footer-links">
               <li><Link to="/login">Sign In</Link></li>
               <li><Link to="/signup">Create Account</Link></li>
-              <li><Link to="/orphanage/register">Orphanage Login</Link></li>
+              <li><Link to="/login">Orphanage Login</Link></li>
             </ul>
-          </div>
-        </div>
-
-        {/* Orphanage CTA band — matching real srinivasam.org footer */}
-        <div className="footer-org-cta">
-          <div className="footer-org-cta-text">
-            <h3>For Orphanages</h3>
-            <p>Are you part of an orphanage? Register or log in to connect with donors.</p>
-          </div>
-          <div className="footer-org-cta-actions">
-            <Link to="/orphanage/register" className="btn btn-primary btn-sm">Register</Link>
-            <Link to="/login" className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>Log in</Link>
           </div>
         </div>
 

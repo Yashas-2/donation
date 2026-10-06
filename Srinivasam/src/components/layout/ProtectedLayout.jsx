@@ -1,22 +1,40 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { normalizeRole, roleHome } from '../../lib/roles';
+
+function LoadingScreen({ text = 'Connecting to Srinivasam...' }) {
+  return (
+    <div className="loading-screen">
+      <div className="spinner"></div>
+      <p>{text}</p>
+    </div>
+  );
+}
+
+function roleGuard(profile, allowedRoles) {
+  const role = normalizeRole(profile?.role);
+  if (!role) return allowedRoles.includes('donor') ? 'allowed' : roleHome('donor');
+  return allowedRoles.includes(role) ? 'allowed' : roleHome(role);
+}
 
 export function ProtectedLayout() {
-  const { user, loading } = useAuth();
+  const { user, profile, profileResolved, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Connecting to Srinivasam...</p>
-      </div>
-    );
-  }
+  if (loading || !profileResolved) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  const guard = roleGuard(profile, ['donor', 'admin']);
+  if (guard !== 'allowed') return <Navigate to={guard} replace />;
+
+  return <Outlet />;
+}
+
+export function AccountLayout() {
+  const { user, loading, profileResolved } = useAuth();
+
+  if (loading || (user && !profileResolved)) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
 
   return <Outlet />;
 }
@@ -25,7 +43,7 @@ export function AdminLayout() {
   const { user, profile, loading } = useAuth();
   const isSessionAdmin = sessionStorage.getItem('srinivasam_admin') === 'true';
 
-  if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
+  if (loading) return <LoadingScreen />;
   if (isSessionAdmin || (user && profile?.role === 'admin')) {
     return <Outlet />;
   }
@@ -33,43 +51,41 @@ export function AdminLayout() {
 }
 
 export function OrphanageLayout() {
-  const { user, profile, loading } = useAuth();
-  if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
+  const { user, profile, profileResolved, loading } = useAuth();
+
+  if (loading || !profileResolved) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+
+  const guard = roleGuard(profile, ['orphanage']);
+  if (guard !== 'allowed') return <Navigate to={guard} replace />;
+
   return <Outlet />;
 }
 
 export function VolunteerLayout() {
-  const { user, profile, loading } = useAuth();
-  if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
+  const { user, profile, profileResolved, loading } = useAuth();
+
+  if (loading || !profileResolved) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
-  if (profile?.role !== 'volunteer') return <Navigate to="/dashboard" replace />;
+
+  const guard = roleGuard(profile, ['volunteer']);
+  if (guard !== 'allowed') return <Navigate to={guard} replace />;
+
   return <Outlet />;
 }
 
 export function PublicOnlyLayout() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, profileResolved, bootstrapped } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>Loading Srinivasam...</p>
-      </div>
-    );
+  // Key off `bootstrapped` rather than `loading`: `loading` also flips to true
+  // while a sign-in/sign-up is in flight, which used to unmount the auth form
+  // and silently swallow the error message.
+  if (!bootstrapped || (user && !profileResolved)) {
+    return <LoadingScreen text="Loading Srinivasam..." />;
   }
 
   if (user) {
-    if (profile?.role === 'orphanage') {
-      return <Navigate to="/orphanage/dashboard" replace />;
-    }
-    if (profile?.role === 'volunteer') {
-      return <Navigate to="/volunteer/dashboard" replace />;
-    }
-    if (profile?.role === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={roleHome(profile?.role)} replace />;
   }
 
   return <Outlet />;

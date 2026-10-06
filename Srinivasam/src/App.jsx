@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
-import { ProtectedLayout, PublicOnlyLayout, AdminLayout, OrphanageLayout, VolunteerLayout } from './components/layout/ProtectedLayout';
+import { AuthNotice } from './components/common/AuthNotice';
+import { ProtectedLayout, PublicOnlyLayout, AdminLayout, OrphanageLayout, VolunteerLayout, AccountLayout } from './components/layout/ProtectedLayout';
 import { AdminLogin } from './pages/AdminLogin';
 import { ForgotPassword } from './pages/ForgotPassword';
 
@@ -30,6 +31,7 @@ function App() {
       <AuthProvider>
         <div className="app-shell">
           <Navbar />
+          <AuthNotice />
           <main className="app-main">
             <Routes>
               {/* Public Routes */}
@@ -69,6 +71,10 @@ function App() {
                 <Route path="/donations" element={<MyDonations />} />
                 <Route path="/donations/recurring" element={<RecurringDonations />} />
                 <Route path="/occasions" element={<MyOccasions />} />
+              </Route>
+
+              {/* Signed-in accounts of any role */}
+              <Route element={<AccountLayout />}>
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
 

@@ -88,16 +88,26 @@ export function Home() {
   const [stats, setStats] = React.useState(null);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     async function load() {
-      const [campaigns, platformStats] = await Promise.all([
+      const [campaignsRes, statsRes] = await Promise.allSettled([
         getActiveCampaigns({ limit: 3 }),
         getPlatformStats(),
       ]);
-      setCauses(campaigns.map(mapCampaignToCard));
-      setStats(platformStats);
-      setLoadingCauses(false);
+
+      if (cancelled) return;
+      if (campaignsRes.status === 'fulfilled') setCauses(campaignsRes.value.map(mapCampaignToCard));
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value);
     }
-    load();
+
+    load().finally(() => {
+      if (!cancelled) setLoadingCauses(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { registerOrphanage } from '../services/orphanageService';
 import { ensureUserProfile } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +7,6 @@ import { supabase } from '../lib/supabaseClient';
 
 export function OrphanageRegister() {
   const { user, updateProfile } = useAuth();
-  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [submittedResult, setSubmittedResult] = useState(null);
   const [formData, setFormData] = useState({
@@ -31,7 +30,6 @@ export function OrphanageRegister() {
     return (
       <div className="page-container max-w-xl text-center" style={{ padding: '5rem 1.5rem' }}>
         <div className="card p-2xl" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏛️</div>
           <h1 className="text-2xl font-bold mb-md">Register Your Orphanage</h1>
           <p className="text-muted mb-lg leading-relaxed">
             You need to create an account first. During sign up, choose{' '}
@@ -68,7 +66,11 @@ export function OrphanageRegister() {
       // Update the profile role to 'orphanage' now that they have submitted.
       // The admin will then approve the orphanage, which confirms this role.
       if (currentUser?.id) {
-        await updateProfile(currentUser.id, { role: 'orphanage' });
+        try {
+          await updateProfile(currentUser.id, { role: 'orphanage' });
+        } catch (roleErr) {
+          console.warn('Role sync skipped:', roleErr?.message);
+        }
       }
 
       setSubmittedResult(result);
@@ -87,7 +89,7 @@ export function OrphanageRegister() {
     return (
       <div className="page-container max-w-xl text-center" style={{ padding: '4rem 1rem' }}>
         <div className="card p-2xl" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}></div>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✅</div>
           <span className="badge badge-success mb-sm">Application Received</span>
           <h2 className="text-2xl font-bold mb-md text-heading">Verification Process Initiated</h2>
           
@@ -98,12 +100,12 @@ export function OrphanageRegister() {
           </div>
 
           <p className="text-muted mb-lg leading-relaxed" style={{ fontSize: '0.95rem' }}>
-            Our ground verification team will review your registration credentials (Reg No: <strong>{formData.registrationNumber}</strong>) and contact <strong>{formData.contactName}</strong> within 2–3 business days.
+            Our ground verification team will review your registration credentials (Reg No: <strong>{formData.registrationNumber}</strong>) and contact <strong>{formData.contactName}</strong> within 2-3 business days.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/admin/dashboard" className="btn btn-primary">
-              View Application in Admin Control Center →
+              View Application in Admin Control Center &rarr;
             </Link>
             <Link to="/orphanage/dashboard" className="btn btn-outline">
               Partner Portal Demo
@@ -124,13 +126,13 @@ export function OrphanageRegister() {
       </div>
 
       <div className="card p-2xl">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-lg">
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           <div className="form-group">
             <label className="form-label" htmlFor="orgName">Organization / Trust Full Legal Name *</label>
             <input
               id="orgName"
               type="text"
-              className="form-control"
+              className="form-input"
               required
               placeholder="e.g. Sri Krishna Shanti Children Home"
               value={formData.orgName}
@@ -138,13 +140,13 @@ export function OrphanageRegister() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div className="form-row">
             <div className="form-group">
               <label className="form-label" htmlFor="registrationNumber">Government Registration No / 12A / 80G *</label>
               <input
                 id="registrationNumber"
                 type="text"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="e.g. REG/DL/2018/00492"
                 value={formData.registrationNumber}
@@ -158,7 +160,7 @@ export function OrphanageRegister() {
                 id="childrenCount"
                 type="number"
                 min="1"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="e.g. 45"
                 value={formData.childrenCount}
@@ -167,13 +169,13 @@ export function OrphanageRegister() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div className="form-row">
             <div className="form-group">
               <label className="form-label" htmlFor="contactName">Primary Trustee / Manager Name *</label>
               <input
                 id="contactName"
                 type="text"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="e.g. Dr. Rajeshwari Sharma"
                 value={formData.contactName}
@@ -186,7 +188,7 @@ export function OrphanageRegister() {
               <input
                 id="phone"
                 type="tel"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="e.g. +91 98450 12345"
                 value={formData.phone}
@@ -195,13 +197,13 @@ export function OrphanageRegister() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <div className="form-row">
             <div className="form-group">
               <label className="form-label" htmlFor="email">Official Email Address *</label>
               <input
                 id="email"
                 type="email"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="trust@childrenhome.org"
                 value={formData.email}
@@ -214,7 +216,7 @@ export function OrphanageRegister() {
               <input
                 id="city"
                 type="text"
-                className="form-control"
+                className="form-input"
                 required
                 placeholder="e.g. Hassan, Karnataka"
                 value={formData.city}
@@ -227,7 +229,7 @@ export function OrphanageRegister() {
             <label className="form-label" htmlFor="description">About Your Home & Care Mission</label>
             <textarea
               id="description"
-              className="form-control"
+              className="form-input"
               rows="4"
               placeholder="Tell us about the facilities, educational support, age groups of children, and urgent support needed..."
               value={formData.description}
@@ -235,14 +237,14 @@ export function OrphanageRegister() {
             ></textarea>
           </div>
 
-          <div className="pt-md border-t flex justify-end gap-md">
+          <div className="pt-md border-t" style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
             <Link to="/" className="btn btn-outline">Cancel</Link>
             <button
               type="submit"
               className="btn btn-primary"
               disabled={submitting}
             >
-              {submitting ? 'Submitting Application…' : 'Submit for Verification'}
+              {submitting ? 'Submitting Application...' : 'Submit for Verification'}
             </button>
           </div>
         </form>
@@ -250,3 +252,7 @@ export function OrphanageRegister() {
     </div>
   );
 }
+
+
+
+

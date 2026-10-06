@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function ForgotPassword() {
@@ -31,7 +32,7 @@ export function ForgotPassword() {
     return (
       <div className="auth-page">
         <div className="auth-card" style={{ maxWidth: '420px', textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}></div>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📧</div>
           <h1 className="auth-title">Check your email</h1>
           <p className="auth-subtitle" style={{ marginBottom: '1.5rem' }}>
             We've sent a password reset link to <strong>{email}</strong>.
@@ -48,9 +49,7 @@ export function ForgotPassword() {
             </button>
             .
           </p>
-          <Link to="/login" className="btn btn-outline btn-md btn-block">
-            ? Back to Sign In
-          </Link>
+          <Link to="/login" className="btn btn-outline btn-md btn-block"><ArrowLeft size={16}/> Back to Sign In</Link>
         </div>
       </div>
     );
@@ -60,7 +59,9 @@ export function ForgotPassword() {
     <div className="auth-page">
       <div className="auth-card" style={{ maxWidth: '420px' }}>
         <div className="auth-brand">
-          <div className="auth-brand-logo" aria-hidden="true"></div>
+          <div className="auth-brand-logo" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
           <h1 className="auth-title">Reset your password</h1>
           <p className="auth-subtitle">
             Enter the email address you signed up with and we'll send you a reset link.

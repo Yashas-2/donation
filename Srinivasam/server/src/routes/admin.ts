@@ -241,7 +241,7 @@ router.put('/needs/:id/review', async (req, res) => {
 // ── Volunteers ──────────────────────────────────────────────
 router.get('/volunteers', async (req, res) => {
   const { status } = req.query;
-  let query = supabase.from('volunteers').select('*').order('created_at', { ascending: false });
+  let query = supabase.from('volunteers').select('*, profiles!volunteers_profile_id_fkey(full_name)').order('created_at', { ascending: false });
   if (status && status !== 'all') query = query.eq('status', status as string);
   const { data, error } = await query;
   res.json({ success: !error, data: data || [], error: error?.message });
@@ -289,6 +289,42 @@ router.put('/volunteer-requests/:id/review', async (req, res) => {
 
   if (data) await logAudit(user.id, `volunteer_request_${status}`, 'volunteer_requests', id, { status, rejection_reason });
   res.json({ success: !error, data, error: error?.message });
+});
+
+// ── Manual Assignment ───────────────────────────────────────
+router.post('/volunteer-requests/:id/assign', async (req, res) => {
+  const { id } = req.params;
+  const { volunteer_id } = req.body;
+  const user = (req as any).user;
+
+  try {
+    const { data: request, error: reqError } = await supabase.from('volunteer_requests').select('*').eq('id', id).single();
+    if (reqError || !request) return res.status(404).json({ success: false, error: 'Request not found' });
+
+    const { data: assignment, error: assignError } = await supabase.from('volunteer_assignments').insert({
+      request_id: id,
+      volunteer_id: volunteer_id,
+      match_score: 100, // Manual assignment
+      status: 'assigned',
+      scheduled_date: request.required_date,
+      start_time: request.start_time,
+      end_time: request.end_time,
+    }).select().single();
+
+    if (assignError) {
+      return res.status(500).json({ success: false, error: assignError.message });
+    }
+
+    await supabase.from('volunteer_requests').update({ status: 'assigned' }).eq('id', id);
+
+    await logAudit(user.id, 'manual_assignment', 'volunteer_requests', id, {
+      assigned_volunteer_id: volunteer_id
+    });
+
+    res.json({ success: true, data: assignment });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ── Trigger Matching ────────────────────────────────────────

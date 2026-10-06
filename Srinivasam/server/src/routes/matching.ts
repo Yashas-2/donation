@@ -44,9 +44,13 @@ router.get('/volunteer-requests/my', auth, requireRole(['orphanage']), async (re
   const user = (req as any).user;
   const { data: orphanage } = await supabase.from('orphanages').select('id').eq('profile_id', user.id).single();
 
+  if (!orphanage) {
+    return res.json({ success: true, data: [] });
+  }
+
   const { data, error } = await supabase.from('volunteer_requests')
     .select('*, assignments:volunteer_assignments(*, volunteer:volunteers(*, profile:profiles(full_name, email)))')
-    .eq('orphanage_id', orphanage?.id)
+    .eq('orphanage_id', orphanage.id)
     .order('created_at', { ascending: false });
 
   res.json({ success: !error, data, error: error?.message });

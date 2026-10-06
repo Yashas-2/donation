@@ -109,20 +109,28 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
+    let cancelled = false;
 
     async function loadDashboard() {
-      const [donorStats, donations, campaignsData] = await Promise.all([
+      const [statsRes, donationsRes, campaignsRes] = await Promise.allSettled([
         getDonorStats(user.id),
         getDonorRecentDonations(user.id, { limit: 5 }),
         getActiveCampaigns({ limit: 3 }),
       ]);
-      setStats(donorStats);
-      setRecentDonations(donations);
-      setCauses(campaignsData.map(mapCampaignToCard));
-      setLoadingData(false);
+
+      if (cancelled) return;
+      if (statsRes.status === 'fulfilled') setStats(statsRes.value);
+      if (donationsRes.status === 'fulfilled') setRecentDonations(donationsRes.value);
+      if (campaignsRes.status === 'fulfilled') setCauses(campaignsRes.value.map(mapCampaignToCard));
     }
 
-    loadDashboard();
+    loadDashboard().finally(() => {
+      if (!cancelled) setLoadingData(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   return (

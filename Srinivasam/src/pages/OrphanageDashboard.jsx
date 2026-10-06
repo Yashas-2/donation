@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { createNeed, updateNeedStatus, deleteNeed, getOrphanageByAdminId } from '../services/orphanageService';
+import { createNeed, updateNeedStatus, deleteNeed, getOrphanageByAdminId, createVolunteerRequest, getMyVolunteerRequests } from '../services/orphanageService';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { Clock } from 'lucide-react';
+import { LoadingState } from '../components/common/LoadingState';
 
 export function OrphanageDashboard() {
   const { user } = useAuth();
@@ -11,21 +13,45 @@ export function OrphanageDashboard() {
   const [activeTab, setActiveTab] = useState('needs');
   const [needs, setNeeds] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
+  const [volunteerRequests, setVolunteerRequests] = useState([]);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    title: '', description: '', location: '', required_date: '', start_time: '', end_time: '', required_skills: ''
+  });
+
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
-      if (user?.id) {
-        const data = await getOrphanageByAdminId(user.id);
-        if (data) {
-          setOrphanage(data);
-          setNeeds(data.needs || []);
-          setCampaigns(data.campaigns || []);
+      try {
+        if (user?.id) {
+          const data = await getOrphanageByAdminId(user.id);
+          if (cancelled) return;
+          if (data) {
+            setOrphanage(data);
+            setNeeds(data.needs || []);
+            setCampaigns(data.campaigns || []);
+          }
         }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
+
+      getMyVolunteerRequests()
+        .then((reqs) => {
+          if (!cancelled && reqs && reqs.success) {
+            setVolunteerRequests(reqs.data || []);
+          }
+        })
+        .catch(() => {});
     }
+
     loadData();
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Form states for Needs
   const [showNeedForm, setShowNeedForm] = useState(false);
@@ -100,8 +126,36 @@ export function OrphanageDashboard() {
   const activeNeedsCount = needs.filter((n) => n.status === 'approved').length;
   const fulfilledNeedsCount = needs.filter((n) => n.status === 'fulfilled').length;
 
+  
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const skills = requestForm.required_skills.split(',').map(s => s.trim()).filter(Boolean);
+      await createVolunteerRequest({
+        ...requestForm,
+        required_skills: skills
+      });
+      alert('Volunteer request created successfully!');
+      setShowRequestForm(false);
+      setRequestForm({ title: '', description: '', location: '', required_date: '', start_time: '', end_time: '', required_skills: '' });
+      const reqs = await getMyVolunteerRequests();
+      if (reqs && reqs.success) {
+        setVolunteerRequests(reqs.data || []);
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
-    return <div className="page-container" style={{ padding: '4rem', textAlign: 'center' }}>Loading dashboard...</div>;
+    return (
+      <div className="page-container">
+        <LoadingState message="Loading dashboard..." />
+      </div>
+    );
   }
 
   if (!orphanage) {
@@ -121,7 +175,7 @@ export function OrphanageDashboard() {
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1.25rem', marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
         <div>
           <span className={`badge badge-${orphanage.verification_status === 'approved' ? 'success' : 'warning'} mb-xs`} style={{ fontSize: '0.8125rem' }}>
-            {orphanage.verification_status === 'approved' ? ' Verified Non-Profit Partner' : '? Verification Pending'}
+            {orphanage.verification_status === 'approved' ? ' Verified Non-Profit Partner' : <><Clock size={12} style={{display:'inline', marginBottom:'-2px'}}/> Verification Pending</>}
           </span>
           <h1 style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--gray-900)', margin: '0.25rem 0' }}>
             {orphanage.name}

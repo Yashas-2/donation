@@ -113,3 +113,8 @@ export async function getAdminOrphanageById(id) {
   const { data } = await apiClient.get(`/admin/orphanages/${id}`);
   return data.data;
 }
+
+export async function assignVolunteerToRequest(requestId, volunteerId) {
+  const { data } = await apiClient.post(`/admin/volunteer-requests/${requestId}/assign`, { volunteer_id: volunteerId });
+  return data;
+}

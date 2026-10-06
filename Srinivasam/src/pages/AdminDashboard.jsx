@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Shield } from 'lucide-react';
 import { 
   getAdminOverview, 
   getAdminOrphanages, reviewOrphanage, deleteAdminOrphanage, getAdminOrphanageById,
   getAdminCampaigns, reviewCampaign, createAdminCampaign, updateAdminCampaign,
   getAdminNeeds, reviewNeed,
   getAdminVolunteers, reviewVolunteer,
-  getAdminVolunteerRequests, reviewVolunteerRequest, triggerMatching,
+  getAdminVolunteerRequests, reviewVolunteerRequest, triggerMatching, assignVolunteerToRequest,
   getAdminDonations, getAdminAudits,
   getAdminUsers, updateAdminUserRole, deleteAdminUser
 } from '../services/adminService';
@@ -23,6 +24,8 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [assignModalData, setAssignModalData] = useState(null);
+  const [availableVolunteers, setAvailableVolunteers] = useState([]);
   const navigate = useNavigate();
 
   const handleSignOut = () => {
@@ -357,11 +360,27 @@ export function AdminDashboard() {
 
   const handleMatch = async (id) => {
     try {
-      await triggerMatching(id);
-      alert('Matching triggered');
+      setLoading(true);
+      const vols = await getAdminVolunteers('available');
+      setAvailableVolunteers(vols || []);
+      setAssignModalData(id);
+      setLoading(false);
+    } catch (err) {
+      alert(err.message);
+      setLoading(false);
+    }
+  };
+
+  const submitManualAssign = async (volunteerId) => {
+    try {
+      setLoading(true);
+      await assignVolunteerToRequest(assignModalData, volunteerId);
+      alert('Volunteer successfully assigned!');
+      setAssignModalData(null);
       fetchData();
     } catch (err) {
       alert(err.message);
+      setLoading(false);
     }
   };
 
@@ -610,7 +629,7 @@ export function AdminDashboard() {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {r.status !== 'approved' && r.status !== 'completed' && <button className="btn btn-xs btn-primary" onClick={() => handleReview('volunteer_request', r.id, 'approved')}>Approve</button>}
                       {r.status !== 'rejected' && r.status !== 'completed' && <button className="btn btn-xs btn-danger"  onClick={() => handleReview('volunteer_request', r.id, 'rejected', true)}>Reject</button>}
-                      {r.status === 'approved' && <button className="btn btn-xs btn-cta"     onClick={() => handleMatch(r.id)}> Match</button>}
+                      {r.status === 'approved' && <button className="btn btn-xs btn-cta"     onClick={() => handleMatch(r.id)}> Assign</button>}
                     </div>
                   </td>
                 </tr>
@@ -674,7 +693,7 @@ export function AdminDashboard() {
                 return (
                   <tr key={a.id}>
                     <td>{new Date(a.created_at).toLocaleString()}</td>
-                    <td style={{ fontWeight: 600 }}>{a.profiles?.full_name || a.actor_id}</td>
+                    <td style={{ fontWeight: 600 }}>{a.profiles?.full_name || a.details?.actor_name || a.actor_id || 'System'}</td>
                     <td><span className="badge badge-accent">{actionText}</span></td>
                     <td style={{ fontSize: '0.85rem' }}><strong style={{textTransform:'capitalize'}}>{a.entity_type}</strong><br/><span style={{color:'var(--text-muted)'}}>{a.entity_id}</span></td>
                     <td style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{detailsStr}</td>
@@ -884,6 +903,42 @@ export function AdminDashboard() {
             }
           }}
         />
+      )}
+      {assignModalData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div className="card" style={{ width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg)', color: 'var(--text)' }}>
+            <h3 style={{ marginTop: 0 }}>Assign Volunteer</h3>
+            {availableVolunteers.length === 0 ? (
+              <p>No available volunteers found. Please approve some volunteers first.</p>
+            ) : (
+              <table className="table" style={{ width: '100%', marginTop: '1rem' }}>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Skills</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableVolunteers.map(v => (
+                    <tr key={v.id}>
+                      <td>{v.profiles?.full_name || 'N/A'}</td>
+                      <td>{v.location}</td>
+                      <td>{v.skills?.join(', ')}</td>
+                      <td>
+                        <button className="btn btn-xs btn-primary" onClick={() => submitManualAssign(v.id)}>Assign</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+              <button className="btn btn-outline" onClick={() => setAssignModalData(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

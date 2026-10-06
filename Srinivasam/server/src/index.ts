@@ -13,6 +13,7 @@ import orphanagesRoutes from './routes/orphanages';
 import receiptsRoutes from './routes/receipts';
 import volunteersRoutes from './routes/volunteers';
 import matchingRoutes from './routes/matching';
+import authRoutes from './routes/auth';
 import { auth } from './middleware/auth';
 import { requireAdmin } from './middleware/requireAdmin';
 
@@ -27,6 +28,7 @@ app.use(express.json());
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/admin', auth, requireAdmin, adminRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignsRoutes);
 app.use('/api/donations', donationsRoutes);
 app.use('/api/needs', needsRoutes);

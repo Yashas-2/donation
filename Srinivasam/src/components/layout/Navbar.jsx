@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Sun, Moon } from 'lucide-react';
 import { ZEFFY_DONATION_URL } from '../../utils/zeffyDonation';
 
 /* ── Srinivasam SVG Logo Mark ──────────────────────────────── */
@@ -52,6 +53,23 @@ export function Navbar() {
 
   const isActive = (path) => location.pathname === path;
   const closeMenu = () => setMenuOpen(false);
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark');
+      setIsDark(true);
+    }
+  }, []);
+  const toggleTheme = () => {
+    if (isDark) {
+      document.body.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    }
+    setIsDark(!isDark);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -173,6 +191,7 @@ export function Navbar() {
             </div>
           )}
 
+          <button onClick={toggleTheme} className="btn btn-ghost btn-sm" aria-label="Toggle Theme" style={{marginRight: '0.5rem'}}>{isDark ? <Sun size={18} /> : <Moon size={18} />}</button>
           {/* Mobile hamburger */}
           <button
             className="navbar-menu-toggle"

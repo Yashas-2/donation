@@ -19,10 +19,18 @@ export function Volunteer() {
 
   if (!user) {
     return (
-      <div className="page-container max-w-3xl text-center" style={{ padding: '4rem 1.5rem' }}>
-        <h2 className="text-2xl font-bold mb-md">Become a Volunteer</h2>
-        <p className="text-muted mb-lg">You must be logged in to register as a volunteer.</p>
-        <Link to="/login" className="btn btn-primary">Login to Continue</Link>
+      <div className="page-container max-w-xl text-center" style={{ padding: '5rem 1.5rem' }}>
+        <div className="card p-2xl" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🙌</div>
+          <h1 className="text-2xl font-bold mb-md">Become a Volunteer</h1>
+          <p className="text-muted mb-lg" style={{ lineHeight: 1.7 }}>
+            You must be logged in to register as a volunteer. Create a free account or sign in to continue.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/login" className="btn btn-primary btn-md">Login to Continue</Link>
+            <Link to="/signup" className="btn btn-outline btn-md">Create Account</Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -58,7 +66,7 @@ export function Volunteer() {
     return (
       <div className="page-container max-w-xl text-center" style={{ padding: '4rem 1rem' }}>
         <div className="card p-2xl" style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>?</div>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🌟</div>
           <span className="badge badge-accent mb-sm">Registration Successful</span>
           <h2 className="text-2xl font-bold mb-md text-heading">Welcome to the Srinivasam Network</h2>
           
@@ -87,7 +95,7 @@ export function Volunteer() {
       </div>
 
       <div className="card p-2xl" style={{ border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        {error && <div className="alert alert-danger mb-md">{error}</div>}
+        {error && <div className="alert alert-error mb-md">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-lg">
           
           <div className="form-group">

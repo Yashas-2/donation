@@ -296,3 +296,13 @@ export async function deleteNeed(needId) {
     throw err;
   }
 }
+
+export async function createVolunteerRequest(requestData) {
+  const { data } = await apiClient.post('/volunteer-requests', requestData);
+  return data;
+}
+
+export async function getMyVolunteerRequests() {
+  const { data } = await apiClient.get('/volunteer-requests/my');
+  return data;
+}

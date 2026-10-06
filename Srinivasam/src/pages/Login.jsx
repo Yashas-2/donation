@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, HeartHandshake } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { normalizeRole, roleHome, roleLabel } from '../lib/roles';
 
 function GoogleIcon() {
   return (
@@ -13,21 +15,23 @@ function GoogleIcon() {
   );
 }
 
-/** Tab IDs */
 const TABS = [
-  { id: 'donor', label: ' Donor', subtitle: 'Sign in to your giving account' },
-  { id: 'orphanage', label: '? Orphanage', subtitle: 'Orphanage / NGO portal access' },
-  { id: 'admin', label: '? Admin', subtitle: 'Staff-only secure access' },
+  { id: 'donor', icon: '🤝', label: "I'm a Donor", subtitle: 'Sign in to your donor account' },
+  { id: 'orphanage', icon: '🏛️', label: "I'm an Orphanage", subtitle: 'Orphanage / NGO portal access' },
+  { id: 'volunteer', icon: '🌟', label: "I'm a Volunteer", subtitle: 'Volunteer portal access' },
+  { id: 'admin', icon: '🛡️', label: 'Admin', subtitle: 'Staff-only secure access' },
 ];
 
 export function Login() {
+  const [step, setStep] = useState(1);
   const [activeTab, setActiveTab] = useState('donor');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { signInWithPassword, signInWithGoogle } = useAuth();
+  const { signInWithPassword, signInWithGoogle, setNotice } = useAuth();
   const navigate = useNavigate();
 
   const currentTab = TABS.find((t) => t.id === activeTab);
@@ -38,12 +42,13 @@ export function Login() {
     setErrorMsg('');
   };
 
-  const handleTabSwitch = (tabId) => {
+  const handleRoleSelect = (tabId) => {
     setActiveTab(tabId);
     resetForm();
-    // Admin tab → redirect to dedicated admin login
     if (tabId === 'admin') {
       navigate('/admin/login');
+    } else {
+      setStep(2);
     }
   };
 
@@ -58,9 +63,19 @@ export function Login() {
 
     try {
       setIsSubmitting(true);
-      await signInWithPassword(email.trim(), password);
-      // PublicOnlyLayout will automatically re-render and route the user
-      // to their respective dashboard based on their profile.role.
+      const result = await signInWithPassword(email.trim(), password);
+      const role =
+        normalizeRole(result?.profile?.role || result?.user?.user_metadata?.role) || 'donor';
+
+      if (role !== activeTab) {
+        setNotice({
+          type: 'info',
+          text: `This email is registered as a ${roleLabel(
+            role
+          )} account, so we've taken you to your ${roleLabel(role)} portal.`,
+        });
+      }
+      navigate(roleHome(role), { replace: true });
     } catch (err) {
       const msg = err.message || '';
       if (msg.includes('Invalid login credentials')) {
@@ -75,10 +90,10 @@ export function Login() {
     }
   };
 
-  const handleGoogle = async () => {
+  const handleGoogle = async (role) => {
     try {
       setErrorMsg('');
-      await signInWithGoogle();
+      await signInWithGoogle(role);
     } catch (err) {
       setErrorMsg(err.message || 'Could not start Google sign-in. Please try again.');
     }
@@ -89,35 +104,45 @@ export function Login() {
       <div className="auth-card" style={{ maxWidth: '460px' }}>
         {/* Brand */}
         <div className="auth-brand">
-          <div className="auth-brand-logo" aria-hidden="true">??</div>
+          <div className="auth-brand-logo" aria-hidden="true"><HeartHandshake size={32} color="var(--primary-600)"/></div>
           <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">{currentTab.subtitle}</p>
+          <p className="auth-subtitle">{step === 1 ? 'Sign in to your account' : currentTab.subtitle}</p>
         </div>
 
-        {/* Role Tabs */}
-        <div className="login-tabs" role="tablist" aria-label="Login type">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              className={`login-tab${activeTab === tab.id ? ' active' : ''}`}
-              onClick={() => handleTabSwitch(tab.id)}
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {errorMsg && (
-          <div className="alert alert-error mb-md" role="alert">{errorMsg}</div>
+        {/* Step 1: Role Selector */}
+        {step === 1 && (
+          <div className="signup-type-selector" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`signup-type-btn${activeTab === tab.id ? ' active' : ''}`}
+                onClick={() => handleRoleSelect(tab.id)}
+              >
+                <span className="signup-type-icon">{tab.icon}</span>
+                <span className="signup-type-label">{tab.label}</span>
+                <span className="signup-type-desc">{tab.subtitle}</span>
+              </button>
+            ))}
+          </div>
         )}
 
-        {/* Donor tab — Google + email */}
-        {activeTab === 'donor' && (
+        {/* Step 2: Form */}
+        {step === 2 && (
           <>
-            <button type="button" onClick={handleGoogle} className="btn-google mb-md">
+            <button
+              type="button"
+              onClick={() => { setStep(1); setErrorMsg(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.875rem', marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+            >
+              ← Back to roles
+            </button>
+
+            {errorMsg && (
+              <div className="alert alert-error mb-md" role="alert">{errorMsg}</div>
+            )}
+
+            <button type="button" onClick={() => handleGoogle(activeTab)} className="btn-google mb-md">
               <GoogleIcon />
               Continue with Google
             </button>
@@ -125,32 +150,9 @@ export function Login() {
             <div className="divider mb-md">
               <span>or sign in with email</span>
             </div>
-          </>
-        )}
 
-        {/* Orphanage tab — info note */}
-        {activeTab === 'orphanage' && (
-          <div
-            style={{
-              background: 'var(--primary-50)',
-              border: '1px solid var(--primary-100)',
-              borderRadius: '10px',
-              padding: '0.75rem 1rem',
-              fontSize: '0.82rem',
-              color: 'var(--primary-700)',
-              marginBottom: '1.25rem',
-              lineHeight: '1.5',
-            }}
-          >
-            Use the email you registered your orphanage with. If you haven't registered yet,{' '}
-            <Link to="/orphanage/register" style={{ fontWeight: 700 }}>
-              register your orphanage here →
-            </Link>
-          </div>
-        )}
-
-        {/* Shared email/password form */}
-        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            {/* Shared email/password form */}
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <div className="form-group">
             <label htmlFor="login-email" className="form-label">Email address</label>
             <input
@@ -177,16 +179,37 @@ export function Login() {
                 </Link>
               )}
             </div>
-            <input
-              id="login-password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                className="form-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex'
+                }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button
@@ -197,20 +220,8 @@ export function Login() {
             {isSubmitting ? 'Signing in…' : `Sign in${activeTab === 'orphanage' ? ' to Orphanage Portal' : ''}`}
           </button>
         </form>
-
-        <div className="auth-footer">
-          {activeTab === 'orphanage' ? (
-            <>
-              Not registered yet?{' '}
-              <Link to="/orphanage/register">Register your orphanage</Link>
-            </>
-          ) : (
-            <>
-              Don't have an account?{' '}
-              <Link to="/signup">Create one — it's free</Link>
-            </>
-          )}
-        </div>
+        </>
+        )}
       </div>
     </div>
   );

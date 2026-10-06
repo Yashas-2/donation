@@ -185,8 +185,8 @@ export function ExploreCauses() {
 
       {/* Platform Flow Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-        border: '1px solid #6ee7b7',
+        background: 'var(--primary-50)',
+        border: '1px solid var(--primary-100)',
         borderRadius: '1rem',
         padding: '1.25rem 1.5rem',
         marginBottom: '2rem',
@@ -197,12 +197,12 @@ export function ExploreCauses() {
       }}>
         <span style={{ fontSize: '1.5rem' }}>🔄</span>
         <div style={{ flex: 1, minWidth: '200px' }}>
-          <div style={{ fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>How Your Donation Works</div>
-          <div style={{ fontSize: '0.875rem', color: '#047857' }}>
+          <div style={{ fontWeight: 700, color: 'var(--primary-700)', marginBottom: '0.25rem' }}>How Your Donation Works</div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--primary-600)' }}>
             <strong>You Donate</strong> → <strong>Srinivasam Receives & Manages Funds</strong> → <strong>Verified Orphanage Need Fulfilled</strong>
           </div>
         </div>
-        <div style={{ fontSize: '0.8rem', color: '#065f46', fontWeight: 600 }}>100% Direct Impact • Zero Platform Fee</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--primary-700)', fontWeight: 600 }}>100% Direct Impact • Zero Platform Fee</div>
       </div>
 
       {/* Filters */}

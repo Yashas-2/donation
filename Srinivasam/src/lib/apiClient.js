@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
 
     if ((isNetworkError || isServerError) && config._retryCount < 3) {
       config._retryCount += 1;
-      const delay = config._retryCount * 1000; // 1s, 2s, 3s
+      const delay = 400 * 2 ** (config._retryCount - 1); // 400ms, 800ms, 1600ms
       await new Promise((res) => setTimeout(res, delay));
       return apiClient(config);
     }
